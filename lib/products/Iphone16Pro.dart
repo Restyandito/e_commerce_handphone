@@ -50,7 +50,7 @@ class _Iphone16ProPageState extends State<Iphone16ProPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ReceiptPage(amount: amount * quantity),
+            builder: (context) => ReceiptPage(amount: amount * quantity, name: '', phone: '', city: '', postalCode: '',),
           ),
         );
       }).onError((errorMsg, sTrace) {

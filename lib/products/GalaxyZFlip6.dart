@@ -50,7 +50,7 @@ class _GalaxyZFlip6PageState extends State<GalaxyZFlip6Page> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ReceiptPage(amount: amount * quantity),
+            builder: (context) => ReceiptPage(amount: amount * quantity, name: '', phone: '', city: '', postalCode: '',),
           ),
         );
       }).onError((errorMsg, sTrace) {

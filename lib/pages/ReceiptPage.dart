@@ -6,24 +6,29 @@ import 'package:firebase_auth/firebase_auth.dart';  // Import Firebase Auth
 class ReceiptPage extends StatelessWidget {
   final double amount;
 
-  const ReceiptPage({Key? key, required this.amount}) : super(key: key);
+  const ReceiptPage({Key? key, required this.amount, required String name, required String phone, required String city, required String postalCode}) : super(key: key);
 
-  // Fungsi untuk mengambil data alamat dari Firestore
-  Future<String> _getUserAddress(User user) async {
-    String customerAddress = "Alamat tidak tersedia";  // Default value if not found
+  // Fungsi untuk mengambil data pengguna dari Firestore berdasarkan uid
+  Future<Map<String, String>> _getUserData(User user) async {
+    Map<String, String> userData = {
+      'name': "Nama tidak tersedia",
+      'phone': "Nomor telepon tidak tersedia",
+      'city': "Kota tidak ditemukan",
+      'postalCode': "Kode Pos tidak ditemukan",
+    };
+
     try {
       DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (doc.exists) {
-        String city = doc['city'] ?? "Kota tidak ditemukan";
-        String country = doc['country'] ?? "Negara tidak ditemukan";
-        String postalCode = doc['postal_code'] ?? "Kode Pos tidak ditemukan";
-        String province = doc['province'] ?? "Provinsi tidak ditemukan";
-        customerAddress = "$city, $province, $postalCode, $country";
+        userData['name'] = doc['name'] ?? "Nama tidak ditemukan";
+        userData['phone'] = doc['phone'] ?? "Nomor telepon tidak ditemukan";
+        userData['city'] = doc['city'] ?? "Kota tidak ditemukan";
+        userData['postalCode'] = doc['postalCode'] ?? "Kode Pos tidak ditemukan";
       }
     } catch (e) {
-      customerAddress = "Gagal memuat alamat.";
+      userData['name'] = "Gagal memuat data pengguna.";
     }
-    return customerAddress;
+    return userData;
   }
 
   @override
@@ -31,14 +36,13 @@ class ReceiptPage extends StatelessWidget {
     // Format angka dengan pemisah ribuan dan dua angka nol
     String formattedAmount = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 2).format(amount);
 
-    // Ambil nama pengguna dari Firebase Auth
-    User? user = FirebaseAuth.instance.currentUser;
-    String customerName = user?.displayName ?? user?.email ?? "Nama Pengguna";
-
     // Ambil timestamp pembelian
     String formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
 
-    // Gunakan FutureBuilder untuk menunggu pengambilan alamat pengguna
+    // Ambil user saat ini dari Firebase Auth
+    User? user = FirebaseAuth.instance.currentUser;
+
+    // Gunakan FutureBuilder untuk menunggu pengambilan data pengguna
     return Scaffold(
       appBar: AppBar(
         title: const Text('Resi Pembayaran'),
@@ -95,43 +99,68 @@ class ReceiptPage extends StatelessWidget {
                   thickness: 1,
                 ),
 
-                // Informasi pembayaran
-                SizedBox(height: 20),
-                Text(
-                  'Nama Pembeli: $customerName',
-                  style: TextStyle(fontSize: 16, fontFamily: 'Inter'),  // Menggunakan font Inter
-                  textAlign: TextAlign.center,  // Memastikan teks nama pembeli di tengah
-                ),
-                const SizedBox(height: 10),
-                FutureBuilder<String>(
-                  future: _getUserAddress(user!), // Ambil alamat dari Firestore
+                // Menampilkan data pengguna menggunakan FutureBuilder
+                FutureBuilder<Map<String, String>>(
+                  future: _getUserData(user!), // Ambil data pengguna dari Firestore
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Text(
-                        "Memuat alamat...",
-                        textAlign: TextAlign.center,  // Memastikan teks alamat di tengah
+                        "Memuat data pengguna...",
+                        textAlign: TextAlign.center,  // Memastikan teks di tengah
                       );
                     } else if (snapshot.hasError) {
                       return Text(
-                        "Terjadi kesalahan saat memuat alamat.",
-                        textAlign: TextAlign.center,  // Memastikan teks error alamat di tengah
+                        "Terjadi kesalahan saat memuat data pengguna.",
+                        textAlign: TextAlign.center,
                       );
                     } else if (snapshot.hasData) {
-                      return Text(
-                        'Alamat Pengiriman: ${snapshot.data}',
-                        style: TextStyle(fontSize: 16, fontFamily: 'Inter'),  // Menggunakan font Inter
-                        textAlign: TextAlign.center,  // Memastikan teks alamat di tengah
+                      var userData = snapshot.data!;
+                      return Column(
+                        children: [
+                          SizedBox(height: 5),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Nama Pembeli: ${userData['name']}',
+                              style: TextStyle(fontSize: 16, fontFamily: 'Inter', ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Nomor Telepon: ${userData['phone']}',
+                              style: TextStyle(fontSize: 16, fontFamily: 'Inter', ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Kota: ${userData['city']}',
+                              style: TextStyle(fontSize: 16, fontFamily: 'Inter'),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Kode Pos: ${userData['postalCode']}',
+                              style: TextStyle(fontSize: 16, fontFamily: 'Inter'),
+                            ),
+                          ),
+                        ],
                       );
                     } else {
                       return Text(
-                        'Alamat Pengiriman: Tidak ditemukan',
-                        style: TextStyle(fontSize: 16, fontFamily: 'Inter'),  // Menggunakan font Inter
-                        textAlign: TextAlign.center,  // Memastikan teks alamat di tengah
+                        'Data pengguna tidak ditemukan',
+                        textAlign: TextAlign.center,
                       );
                     }
                   },
                 ),
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 5),
                 Divider(
                   color: Colors.black.withOpacity(0.5),
                   height: 20,
@@ -139,7 +168,7 @@ class ReceiptPage extends StatelessWidget {
                 ),
 
                 // Menambahkan SizedBox untuk mengatur jarak
-                SizedBox(height: 10),  // Menambah jarak agar Total Pembayaran lebih ke bawah
+                SizedBox(height: 10),
 
                 // Detail harga
                 Row(
@@ -147,12 +176,12 @@ class ReceiptPage extends StatelessWidget {
                   children: [
                     Text(
                       'Total Pembayaran',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Inter'),  // Menggunakan font Inter
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
                     ),
                     const SizedBox(width: 10),
                     Text(
                       formattedAmount,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Inter'),  // Menggunakan font Inter
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
                     ),
                   ],
                 ),
@@ -166,7 +195,7 @@ class ReceiptPage extends StatelessWidget {
                 // Tombol Kembali
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/home_page');
+                    Navigator.pushReplacementNamed(context, '/home');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
@@ -177,7 +206,7 @@ class ReceiptPage extends StatelessWidget {
                   ),
                   child: Text(
                     'Kembali ke Beranda',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Inter'),  // Menggunakan font Inter
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'Inter'),
                   ),
                 ),
               ],

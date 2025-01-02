@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
 import '../model/model_kota.dart';
-import 'detail_page.dart';  // Pastikan halaman detail ada dan disesuaikan
+import 'detail_page.dart';  //
 
 class ShippingPage extends StatefulWidget {
   const ShippingPage({Key? key}) : super(key: key);

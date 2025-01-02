@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/fonnte_service.dart';
 import 'otp_verification.dart';
+import 'package:flutter/services.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -10,18 +11,23 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController nameController = TextEditingController(); // Menambahkan controller untuk Nama
+  final TextEditingController cityController = TextEditingController(); // Menambahkan controller untuk Kota
+  final TextEditingController postalCodeController = TextEditingController(); // Menambahkan controller untuk Kode Pos
   bool _obscurePassword = true;
 
   Future<void> sendOTP() async {
     final email = emailController.text.trim();
+    final name = nameController.text.trim();
     final password = passwordController.text.trim();
     final phoneNumber = phoneController.text.trim();
+    final city = cityController.text.trim();
+    final postalCode = postalCodeController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || phoneNumber.isEmpty) {
+    if (email.isEmpty || password.isEmpty || phoneNumber.isEmpty || name.isEmpty || city.isEmpty || postalCode.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("All fields are required.")),
       );
@@ -32,14 +38,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // Kirim OTP melalui Fonnte
       await FonnteService.sendOTP(phoneNumber);
 
-      // Navigasi ke layar OTP Verification
+      // Navigasi ke layar OTP Verification setelah OTP berhasil dikirim
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => OTPVerificationScreen(
+            name: name,
             email: email,
             password: password,
             phoneNumber: phoneNumber,
+            city: city,
+            postalCode: postalCode, // Mengirim data alamat ke halaman OTP Verification
           ),
         ),
       );
@@ -51,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Method untuk mendaftar dan menyimpan data pengguna ke Firestore
-  Future<void> registerUser(String email, String password, String phoneNumber) async {
+  Future<void> registerUser(String email, String password, String phoneNumber, String name, String province, String city, String postalCode) async {
     try {
       // Registrasi pengguna dengan Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -61,10 +70,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       // Menyimpan data pengguna ke koleksi 'users' Firestore setelah berhasil registrasi
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-        'name': phoneNumber,  // Anda bisa mengganti 'name' dengan data lain seperti 'fullName'
+        'name': name,  // Menyimpan nama pengguna
         'email': email,
         'phone': phoneNumber,
         'uid': userCredential.user!.uid,
+        'city': city, // Menyimpan kota
+        'postalCode': postalCode, // Menyimpan kode pos
         'createdAt': FieldValue.serverTimestamp(),  // Menambahkan timestamp
       });
 
@@ -73,7 +84,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("User registered and data saved to Firestore")),
       );
-
     } catch (e) {
       print("Registration failed: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +113,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 40),
 
+                // Input Nama Pengguna
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: "Masukkan nama Anda",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // Input Email
                 TextField(
                   controller: emailController,
@@ -129,6 +151,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Input Kota dan Kode Pos sejajar dengan padding bawah
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),  // Menambahkan padding bawah
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: cityController,
+                          decoration: InputDecoration(
+                            labelText: "Masukkan Kota",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),  // Jarak antar kolom
+                      Expanded(
+                        child: TextField(
+                          controller: postalCodeController,
+                          decoration: InputDecoration(
+                            labelText: "Masukkan Kode Pos",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(5),  // Membatasi input sampai 5 karakter
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 // Input Password
                 TextField(
                   controller: passwordController,

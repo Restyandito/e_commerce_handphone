@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';  // Import Firestore
 import '../services/fonnte_service.dart';
 import 'login.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
+  final String name;
   final String email;
   final String password;
   final String phoneNumber;
+  final String city;
+  final String postalCode;
 
   OTPVerificationScreen({
+    required this.name,
     required this.email,
     required this.password,
     required this.phoneNumber,
+    required this.city,
+    required this.postalCode,
   });
 
   @override
@@ -37,10 +44,21 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       if (FonnteService.verifyOTP(phoneNumber, otp)) {
         try {
           // Buat akun di Firebase Authentication
-          await _auth.createUserWithEmailAndPassword(
+          UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
             email: widget.email,
             password: widget.password,
           );
+
+          // Menyimpan data pengguna ke Firestore setelah berhasil registrasi
+          await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+            'name': widget.name,
+            'email': widget.email,
+            'phone': widget.phoneNumber,
+            'city': widget.city,
+            'postalCode' : widget.postalCode,
+            'uid': userCredential.user!.uid,
+            'createdAt': FieldValue.serverTimestamp(),  // Menambahkan timestamp
+          });
 
           // Menampilkan notifikasi bahwa registrasi berhasil
           ScaffoldMessenger.of(context).showSnackBar(
@@ -108,6 +126,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 Text(
                   "Masukkan OTP yang telah dikirimkan ke nomor ${widget.phoneNumber}",
                   style: TextStyle(fontSize: 16, color: Colors.black54),
+                    textAlign: TextAlign.center
                 ),
                 const SizedBox(height: 40),
 

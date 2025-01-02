@@ -50,7 +50,7 @@ class _GooglePixel8ProPageState extends State<GooglePixel8ProPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ReceiptPage(amount: amount * quantity),
+            builder: (context) => ReceiptPage(amount: amount * quantity, name: '', phone: '', city: '', postalCode: '',),
           ),
         );
       }).onError((errorMsg, sTrace) {

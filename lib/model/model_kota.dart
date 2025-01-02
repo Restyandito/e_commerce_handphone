@@ -14,8 +14,8 @@ class ModelKota {
   @override
   String toString() => cityName as String;
 
-  static List<ModelKota> fromJsonList(List list) {
-    if (list.length == 0) return List<ModelKota>.empty();
+  static List<ModelKota> fromJsonList(List<dynamic> list) {
+    if (list.isEmpty) return List<ModelKota>.empty();
     return list.map((item) => ModelKota.fromJson(item)).toList();
   }
 }

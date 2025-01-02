@@ -50,7 +50,7 @@ class _Iphone15PageState extends State<Iphone15Page> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ReceiptPage(amount: amount * quantity),
+            builder: (context) => ReceiptPage(amount: amount * quantity, name: '', phone: '', city: '', postalCode: '',),
           ),
         );
       }).onError((errorMsg, sTrace) {
